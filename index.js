@@ -65,7 +65,6 @@ const server = createServer(async (req, res) => {
         body += chunk;
       });
       req.on("end", async () => {
-        console.log('a')
         try {
           const data = JSON.parse(body);
 
