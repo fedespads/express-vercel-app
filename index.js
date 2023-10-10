@@ -124,7 +124,7 @@ const server = createServer(async (req, res) => {
           res.end(JSON.stringify(moviesData));
         } catch (error) {
           res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ message: "Errore nell'uso di Puppeteer o nel parsing del JSON" }));
+          res.end(JSON.stringify({ message: error }));
         }
       });
     } else {
