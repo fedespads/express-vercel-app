@@ -68,7 +68,10 @@ const server = createServer(async (req, res) => {
         try {
           const data = JSON.parse(body);
 
-          const browser = await puppeteer.launch({ headless: true });
+          const browser = await puppeteer.launch({
+            headless: true,
+            args: ["--no-sandbox", "--disable-setuid-sandbox"]
+          });
           let pages = await browser.pages();
           page = pages[0];
           await page.goto('https://www.ucicinemas.it/cinema/emilia-romagna/ferrara/uci-cinemas-ferrara/')
