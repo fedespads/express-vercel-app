@@ -1,5 +1,5 @@
 import { createServer } from "http";
-import puppeteer from "puppeteer";
+import puppeteer from 'puppeteer-core';
 
 let page;
 async function clicca(soggetto, numero) {
@@ -66,13 +66,23 @@ const server = createServer(async (req, res) => {
       });
       req.on("end", async () => {
         try {
-          const data = JSON.parse(body);
 
-          const browser = await puppeteer.launch({
-            headless: true,
-            args: ["--no-sandbox", "--disable-setuid-sandbox"]
-          });
-          let pages = await browser.pages();
+          
+
+
+
+
+          exports.handler = async (event) => {
+            
+            const data = JSON.parse(body);
+            let browser;
+            try {
+              browser = await puppeteer.launch({
+                executablePath: '/path/to/chromium' // Specifica il percorso a Chromium se necessario
+              });
+
+
+              let pages = await browser.pages();
           page = pages[0];
           await page.goto('https://www.ucicinemas.it/cinema/emilia-romagna/ferrara/uci-cinemas-ferrara/')
           await clicca('#onetrust-reject-all-handler');
@@ -91,8 +101,25 @@ const server = createServer(async (req, res) => {
             });
             return movies;
           });
-          await browser.close();
 
+
+              await browser.close();
+          
+              return {
+                statusCode: 200,
+                body: JSON.stringify(moviesData),
+              };
+            } catch (error) {
+              return {
+                statusCode: 500,
+                body: JSON.stringify({ message: 'Errore nell\'uso di Puppeteer' }),
+              };
+            } finally {
+              if (browser) {
+                await browser.close();
+              }
+            }
+          };
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(moviesData));
         } catch (error) {
