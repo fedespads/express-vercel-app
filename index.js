@@ -29,7 +29,7 @@ const server = createServer((req, res) => {
           const data = JSON.parse(body);
           // Fai qualcosa con i dati ricevuti dalla richiesta POST
           res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ message: "Ricevuto POST", data }));
+          res.end(JSON.stringify({"message": `i${data}i`}));
         } catch (error) {
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ message: "Errore nel parsing del JSON" }));
