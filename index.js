@@ -65,6 +65,7 @@ const server = createServer(async (req, res) => {
         body += chunk;
       });
       req.on("end", async () => {
+        console.log('a')
         try {
           const data = JSON.parse(body);
 
@@ -89,7 +90,7 @@ const server = createServer(async (req, res) => {
             return movies;
           });
           await browser.close();
-          
+
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(moviesData));
         } catch (error) {
