@@ -1,6 +1,46 @@
 import { createServer } from "http";
+import puppeteer from "puppeteer";
 
-const server = createServer((req, res) => {
+let page;
+async function clicca(soggetto, numero) {
+  await page.waitForSelector(soggetto);
+
+  if (typeof numero === "undefined") {
+    await page.click(soggetto);
+  } else {
+    const elements = await page.$$(soggetto);
+    if (elements.length > numero) {
+      await elements[numero].click();
+    } else {
+      console.error(`Elemento con indice ${numero} non trovato.`);
+    }
+  }
+}
+async function innerHTML(className, index) {
+  await page.waitForSelector(className);
+  const elements = await page.$$(className);
+  if (typeof index === "undefined") {
+    const firstElement = elements[0];
+    if (firstElement) {
+      const innerHTML = await firstElement.evaluate(
+        (element) => element.innerHTML
+      );
+      return innerHTML;
+    } else {
+      return null;
+    }
+  } else {
+    if (index >= 0 && index < elements.length) {
+      const element = elements[index];
+      const innerHTML = await element.evaluate((element) => element.innerHTML);
+      return innerHTML;
+    } else {
+      return null;
+    }
+  }
+}
+
+const server = createServer(async (req, res) => {
   // Imposta le intestazioni CORS per consentire tutte le origini (questo è solo per scopi di esempio,
   // è possibile configurarlo in modo più restrittivo).
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -14,7 +54,7 @@ const server = createServer((req, res) => {
     return;
   }
 
-  if (req.url === "/") {
+  if (req.url === "/film") {
     // Gestisci la richiesta principale
     if (req.method === "GET") {
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -24,15 +64,37 @@ const server = createServer((req, res) => {
       req.on("data", (chunk) => {
         body += chunk;
       });
-      req.on("end", () => {
+      req.on("end", async () => {
         try {
           const data = JSON.parse(body);
-          // Fai qualcosa con i dati ricevuti dalla richiesta POST
+
+          const browser = await puppeteer.launch({ headless: false });
+          let pages = await browser.pages();
+          page = pages[0];
+          await page.goto('https://www.ucicinemas.it/cinema/emilia-romagna/ferrara/uci-cinemas-ferrara/')
+          await clicca('#onetrust-reject-all-handler');
+          const moviesData = await page.evaluate(() => {
+            const movies = [];
+            const showDivs = document.querySelectorAll('.showtimes__show');
+            showDivs.forEach((showDiv) => {
+              let movieName = showDiv.querySelector('.movie-name').textContent;
+              movieName = movieName.replace(/\n/g, '');
+              const showtimes = [];
+              const timeListItems = showDiv.querySelectorAll('ul li');
+              timeListItems.forEach((timeListItem) => {
+                showtimes.push(timeListItem.textContent);
+              });
+              movies.push([movieName, showtimes]);
+            });
+            return movies;
+          });
+          await browser.close();
+          
           res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({"message": `i${data}i`}));
+          res.end(JSON.stringify(moviesData));
         } catch (error) {
           res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ message: "Errore nel parsing del JSON" }));
+          res.end(JSON.stringify({ message: "Errore nell'uso di Puppeteer o nel parsing del JSON" }));
         }
       });
     } else {
